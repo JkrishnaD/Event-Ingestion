@@ -1,8 +1,16 @@
+use serde::Serialize;
 use sqlx::{PgPool, postgres::PgPoolOptions};
 
 #[derive(Clone)]
 pub struct DbPool {
     pub pool: PgPool,
+}
+
+#[derive(Serialize, Debug)]
+pub struct PoolDetails {
+    size: u32,
+    idle_connections: usize,
+    is_closed: bool,
 }
 
 impl DbPool {
@@ -17,5 +25,13 @@ impl DbPool {
         tracing::info!("Database Connection Established");
 
         Self { pool }
+    }
+
+    pub async fn get_pool_details(&self) -> PoolDetails {
+        PoolDetails {
+            size: self.pool.size(),
+            idle_connections: self.pool.num_idle(),
+            is_closed: self.pool.is_closed(),
+        }
     }
 }
