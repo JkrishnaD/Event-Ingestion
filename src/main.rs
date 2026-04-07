@@ -1,6 +1,6 @@
 use tokio::net::TcpListener;
 
-use crate::{handlers::create_events, utils::shutdown_signal};
+use crate::{handlers::events_router, utils::shutdown_signal};
 
 mod db;
 mod handlers;
@@ -18,7 +18,7 @@ async fn main() {
     let url = std::env::var("DATABASE_URL").expect("Failed to fetch url");
     let pool = db::DbPool::new(&url).await;
 
-    let app = create_events(pool);
+    let app = events_router(pool);
 
     tracing::info!("Server is good to start communication");
 
