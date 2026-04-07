@@ -1,7 +1,7 @@
 use serde::Serialize;
 use sqlx::{PgPool, postgres::PgPoolOptions};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct DbPool {
     pub pool: PgPool,
 }

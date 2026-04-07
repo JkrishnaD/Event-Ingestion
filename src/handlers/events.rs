@@ -2,6 +2,8 @@ use crate::db::DbPool;
 use axum::{Json, extract::State, http::StatusCode};
 use serde::Deserialize;
 use sqlx::Row;
+use tokio::time::Instant;
+use tracing::instrument;
 
 #[derive(Debug, Deserialize)]
 pub struct IncomingEvent {
@@ -11,12 +13,17 @@ pub struct IncomingEvent {
     data: serde_json::Value,
 }
 
+#[instrument(skip(pool, event))]
 #[axum::debug_handler]
 pub async fn insert_event(
     State(pool): State<DbPool>,
     Json(event): Json<IncomingEvent>,
 ) -> Result<Json<i64>, StatusCode> {
     tracing::info!("Inserting...");
+
+    let start = Instant::now();
+
+    // Query to insert event into DB
     let row = sqlx::query(
         r#"INSERT INTO events (app_id, user_id, event_type, data)
         VALUES ($1, $2, $3, $4)
@@ -30,9 +37,16 @@ pub async fn insert_event(
     .await
     .expect("Failed to insert");
 
+    let duration = start.elapsed().as_millis();
+
     let id: i64 = row.get("id");
 
-    tracing::info!("Inserted event with id: {}", id);
+    tracing::info!(
+        app_id = event.app_id,
+        user_id = event.user_id,
+        db_duration_ms = duration,
+        "event inserted"
+    );
 
     Ok(axum::Json(id))
 }
