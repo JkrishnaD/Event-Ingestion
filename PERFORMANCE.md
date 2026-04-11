@@ -100,11 +100,36 @@ In production with a remote database (e.g., Neon, AWS RDS), expect:
 
 The batching optimization becomes even more critical with remote databases, since each round trip is expensive — reducing 1000 individual INSERTs to 1 bulk INSERT saves ~999 network round trips.
 
+## Batch Insert Performance (Channel + QueryBuilder)
+
+Architecture:
+Client → Axum → Channel (mpsc) → Background Batch Writer → Bulk INSERT → PostgreSQL
+
+The handler sends events into an in-memory channel and returns 202 immediately. A background task collects events and flushes them to Postgres in bulk using sqlx::QueryBuilder when the buffer hits 500 events or 500ms elapses.
+
+| Concurrency | Req/sec | p50    | p95     | p99     | Avg Latency |
+| ----------- | ------- | ------ | ------- | ------- | ----------- |
+| 10          | 20,992  | 0.39ms | 0.86ms  | 1.73ms  | 0.47ms      |
+| 50          | 21,760  | 1.74ms | 5.90ms  | 13.51ms | 2.29ms      |
+| 100         | 21,633  | 3.40ms | 13.50ms | 18.33ms | 4.62ms      |
+| 200         | 20,128  | 7.81ms | 21.06ms | 27.78ms | 9.92ms      |
+
+## Comparison: Naive vs Batched
+
+| Concurrency | Naive Req/sec | Batched Req/sec | Speedup | Naive p99 | Batched p99 |
+| ----------- | ------------- | --------------- | ------- | --------- | ----------- |
+| 10          | 811           | 20,992          | 25.8x   | 60.49ms   | 1.73ms      |
+| 50          | 1,539         | 21,760          | 14.1x   | 111.95ms  | 13.51ms     |
+| 100         | 1,650         | 21,633          | 13.1x   | 101.35ms  | 18.33ms     |
+| 200         | 1,783         | 20,128          | 11.3x   | 194.47ms  | 27.78ms     |
+
+Key takeaway: Decoupling the HTTP handler from database writes and using bulk INSERTs improved throughput by 11-25x and reduced p99 latency by 7-35x depending on concurrency level.
+
 ## Next Optimization Phase
 
 ### Planned improvements:
 
-- Batch inserts
+- graceful shutdown flushing the buffer
 - Background worker
 - Queue buffering
 - Async ingestion
