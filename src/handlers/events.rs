@@ -17,10 +17,8 @@ pub async fn insert_event(
     State(pool): State<AppState>,
     Json(event): Json<IncomingEvent>,
 ) -> StatusCode {
-    tracing::info!("Sending event to batching");
     let state = pool.tx;
     state.send(event).await.ok();
 
-    tracing::info!("{}", StatusCode::ACCEPTED);
     StatusCode::ACCEPTED
 }

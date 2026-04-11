@@ -16,7 +16,7 @@ async fn main() {
     let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
     tracing::info!("Server started at 3000");
 
-    let (tx, rx) = tokio::sync::mpsc::channel(1000);
+    let (tx, rx) = tokio::sync::mpsc::channel(10000);
 
     let url = std::env::var("DATABASE_URL").expect("Failed to fetch url");
     tracing::info!("Server is good to start communication");
