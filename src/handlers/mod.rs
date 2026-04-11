@@ -4,17 +4,16 @@ use axum::{
 };
 
 use crate::{
-    db::DbPool,
+    db::AppState,
     handlers::{events::insert_event, health::health_handler},
 };
 
-mod events;
+pub mod events;
 mod health;
 
-pub fn events_router(pool: DbPool) -> Router {
-    let pool_clone = pool.clone();
+pub fn events_router(pool: AppState) -> Router {
     Router::new()
         .route("/health", get(health_handler))
         .route("/event", post(insert_event))
-        .with_state(pool_clone)
+        .with_state(pool)
 }

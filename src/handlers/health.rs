@@ -1,7 +1,7 @@
 use axum::{Json, extract::State, response::IntoResponse};
 use serde::Serialize;
 
-use crate::db::{DbPool, PoolDetails};
+use crate::db::{AppState, PoolDetails};
 
 #[derive(Serialize)]
 pub struct HealthResponse {
@@ -9,7 +9,7 @@ pub struct HealthResponse {
     pool_details: PoolDetails,
 }
 
-pub async fn health_handler(State(db_pool): State<DbPool>) -> impl IntoResponse {
+pub async fn health_handler(State(db_pool): State<AppState>) -> impl IntoResponse {
     tracing::info!("Health check");
     let details = db_pool.get_pool_details().await;
 

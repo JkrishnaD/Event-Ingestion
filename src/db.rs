@@ -1,9 +1,13 @@
 use serde::Serialize;
 use sqlx::{PgPool, postgres::PgPoolOptions};
+use tokio::sync::mpsc;
+
+use crate::handlers::events::IncomingEvent;
 
 #[derive(Clone, Debug)]
-pub struct DbPool {
+pub struct AppState {
     pub pool: PgPool,
+    pub tx: mpsc::Sender<IncomingEvent>,
 }
 
 #[derive(Serialize, Debug)]
@@ -13,8 +17,8 @@ pub struct PoolDetails {
     is_closed: bool,
 }
 
-impl DbPool {
-    pub async fn new(db_url: &str) -> Self {
+impl AppState {
+    pub async fn new(db_url: &str, tx: mpsc::Sender<IncomingEvent>) -> Self {
         let pool = PgPoolOptions::new()
             .max_connections(20)
             .min_connections(5)
@@ -24,7 +28,7 @@ impl DbPool {
 
         tracing::info!("Database Connection Established");
 
-        Self { pool }
+        Self { pool, tx }
     }
 
     pub async fn get_pool_details(&self) -> PoolDetails {
