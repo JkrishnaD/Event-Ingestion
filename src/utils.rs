@@ -1,6 +1,7 @@
 use tokio::signal;
 use tracing::info;
 
+// Utility function to handle shutdown signals (Ctrl-C, SIGTERM)
 pub async fn shutdown_signal() {
     let ctrl_c = signal::ctrl_c();
 

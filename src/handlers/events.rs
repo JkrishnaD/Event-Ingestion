@@ -17,9 +17,8 @@ pub async fn insert_event(
     State(pool): State<AppState>,
     Json(event): Json<IncomingEvent>,
 ) -> StatusCode {
-    let state = pool.tx;
-
-    match state.send(event).await {
+    // Forwarding all the events to the channel
+    match pool.tx.send(event).await {
         Ok(_) => StatusCode::ACCEPTED,
         Err(_) => StatusCode::SERVICE_UNAVAILABLE,
     }

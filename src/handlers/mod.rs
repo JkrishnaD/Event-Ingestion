@@ -11,6 +11,7 @@ use crate::{
 pub mod events;
 mod health;
 
+// Router for the events and health endpoints
 pub fn events_router(pool: AppState) -> Router {
     Router::new()
         .route("/health", get(health_handler))

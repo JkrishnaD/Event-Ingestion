@@ -9,7 +9,7 @@ The main purpose of this project is to monitor high request volumes hitting the 
 ## Architectural Flow
 
 ```bash
-Client → Axum → JSON Parsing → SQLx → PostgreSQL → Response
+Client → Axum → JSON Parsing → Channel (mpsc) → Batching → Bluk Insert (SQLx) → Postgres Database
 ```
 
 ## Local Testing
@@ -58,5 +58,3 @@ oha -z 10s -c 10 --no-tui \
 Based on your requirments you can change the `z` and `c` values and you can change the request which you are testing
 
 I have run a few performances tests so check them out in here [PERFORMANCES](./PERFORMANCE.md)
-
-Next steps include improving the system by adding batching, channel-based writing, and other optimizations.

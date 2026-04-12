@@ -9,6 +9,7 @@ pub struct HealthResponse {
     pool_details: PoolDetails,
 }
 
+// Handler for the health check endpoint
 pub async fn health_handler(State(db_pool): State<AppState>) -> impl IntoResponse {
     tracing::info!("Health check");
     let details = db_pool.get_pool_details().await;

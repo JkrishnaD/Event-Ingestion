@@ -124,12 +124,3 @@ The handler sends events into an in-memory channel and returns 202 immediately. 
 | 200         | 1,783         | 20,128          | 11.3x   | 194.47ms  | 27.78ms     |
 
 Key takeaway: Decoupling the HTTP handler from database writes and using bulk INSERTs improved throughput by 11-25x and reduced p99 latency by 7-35x depending on concurrency level.
-
-## Next Optimization Phase
-
-### Planned improvements:
-
-- graceful shutdown flushing the buffer
-- Background worker
-- Queue buffering
-- Async ingestion
