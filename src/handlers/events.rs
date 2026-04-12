@@ -18,7 +18,9 @@ pub async fn insert_event(
     Json(event): Json<IncomingEvent>,
 ) -> StatusCode {
     let state = pool.tx;
-    state.send(event).await.ok();
 
-    StatusCode::ACCEPTED
+    match state.send(event).await {
+        Ok(_) => StatusCode::ACCEPTED,
+        Err(_) => StatusCode::SERVICE_UNAVAILABLE,
+    }
 }
