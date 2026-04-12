@@ -2,6 +2,7 @@ use std::time::Duration;
 
 use sqlx::{PgPool, QueryBuilder};
 use tokio::{sync::mpsc, time::interval};
+use tracing::instrument;
 
 use crate::handlers::events::IncomingEvent;
 
@@ -41,11 +42,13 @@ pub async fn batch_jobs(mut rx: mpsc::Receiver<IncomingEvent>, pool: PgPool) {
     }
 }
 
+#[instrument(skip(buffer, pool) fields(batch_size = buffer.len()))]
 pub async fn flush_buffer(buffer: &mut Vec<IncomingEvent>, pool: &PgPool) {
     if buffer.is_empty() {
         return;
     }
 
+    let _buffer_len = buffer.len();
     let events = std::mem::take(buffer);
     let start = std::time::Instant::now();
 
@@ -60,8 +63,21 @@ pub async fn flush_buffer(buffer: &mut Vec<IncomingEvent>, pool: &PgPool) {
     });
 
     let query = query_builder.build();
-    let _result = query.execute(pool).await;
-
-    let elapsed = start.elapsed();
-    tracing::info!("Flushed {} events in {:?}", events.len(), elapsed);
+    match query.execute(pool).await {
+        Ok(_) => {
+            let elapsed = start.elapsed();
+            tracing::info!(
+                events_processed = events.len(),
+                elapsed_ms = elapsed.as_millis() as u64,
+                "batch flushed"
+            );
+        }
+        Err(e) => {
+            tracing::error!(
+                events_lost = events.len(),
+                error = %e,
+                "batch flush failed"
+            );
+        }
+    }
 }
